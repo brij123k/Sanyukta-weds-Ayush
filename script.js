@@ -9,12 +9,14 @@ const CONFIG = {
   wardrobePlannerUrl: "style-guide.html",
   // Shown on top of the invite when the planner is tapped, with its own song (must be a real MP3)
   styleGuideImage: "assets/planner/style-guide.jpg?v=1",
-  styleGuideMusic: "assets/music/style-guide.mp3?v=2",
+  // Leave "" so the style guide keeps playing the same song as the rest of the invite
+  styleGuideMusic: "",
   // Optional song for the Sangeet ticket / vinyl, e.g. "assets/sangeet/song.mp3"
   sangeetSong: "",
   // Background music for the whole invite. Starts when the guest taps the book.
   // Put the MP3 at this path; if the file is missing, music simply stays off.
-  backgroundMusic: "assets/music/hum-tum.mp3",
+  // (Real-MP3 copy of the Shopify "audio.mp3", which is really WebM and won't play on iPhones.)
+  backgroundMusic: "assets/music/style-guide.mp3?v=2",
 };
 
 /* ---------- Background music ---------- */
