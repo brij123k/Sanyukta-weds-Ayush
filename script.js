@@ -5,9 +5,8 @@
 const CONFIG = {
   // First event (Haldi) – 23 Jan 2027, 3:00 PM IST
   countdownTo: "2027-01-23T15:00:00+05:30",
-  // Wardrobe Planner PDF – downloads when the planner is tapped. Leave "" to show a "coming soon" note.
-  wardrobePlannerUrl: "assets/planner/SA-Planner.pdf",
-  wardrobePlannerFileName: "Sanyukta-Ayush-Style-Guide.pdf",
+  // Wardrobe Planner – the style guide page that opens when the planner is tapped. Leave "" to show a "coming soon" note.
+  wardrobePlannerUrl: "style-guide.html",
   // Optional song for the Sangeet ticket / vinyl, e.g. "assets/sangeet/song.mp3"
   sangeetSong: "",
   // Background music for the whole invite. Starts when the guest taps the book.
@@ -338,9 +337,10 @@ function burst(anchor, { x, y, colors = ["#d4a43a", "#f4c9d0", "#e9b949", "#c46a
 /* ---------- Wardrobe planner ---------- */
 document.querySelectorAll(".planner-link").forEach((a) => {
   if (CONFIG.wardrobePlannerUrl) {
+    // Opens the style guide page in a new tab (the invite stays open behind it)
     a.href = CONFIG.wardrobePlannerUrl;
-    a.setAttribute("download", CONFIG.wardrobePlannerFileName);
-    a.addEventListener("click", () => toast("Downloading the style guide ✨"));
+    a.target = "_blank";
+    a.rel = "noopener";
   } else {
     a.addEventListener("click", (e) => {
       e.preventDefault();
