@@ -25,6 +25,22 @@
       color: #8a4b5c; font-size: 18px; pointer-events: none; transition: opacity .4s;
     }
     .loaded .loading { opacity: 0; }
+
+    /* floating music button – same look as on the invite */
+    @keyframes musicSpin { to { transform: rotate(360deg); } }
+    .music-btn {
+      position: fixed; right: 16px; bottom: 16px; z-index: 10;
+      width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+      display: grid; place-items: center;
+      background: rgba(60, 40, 20, .7); color: #fff; font-size: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+    }
+    .music-btn span { display: block; }
+    .music-btn.playing span { animation: musicSpin 3s linear infinite; }
+    .music-btn:not(.playing) { opacity: .7; }
+    .music-btn:not(.playing)::after {
+      content: ""; position: absolute; width: 26px; height: 2px; background: #fff; transform: rotate(-45deg);
+    }
   </style>
 </head>
 <body>
@@ -34,5 +50,50 @@
     <img src="assets/planner/style-guide.jpg?v=1" alt="Sanyukta & Ayush style guide: what to wear for Haldi & Mehendi, Sangeet Night, Mameru & Rukhwat, the Wedding and the After Party"
          onload="document.body.classList.add('loaded')" />
   </main>
+
+  <button class="music-btn" type="button" aria-label="Play music"><span aria-hidden="true">♫</span></button>
+  <audio id="music" src="https://cdn.shopify.com/s/files/1/0778/9474/6301/files/audio.mp3?v=1795660547" loop preload="auto"></audio>
+
+  <script>
+    /* Music for the style guide. Browsers only allow sound after the guest touches the page,
+       so we try to start right away and, if that's blocked, start on the first tap anywhere. */
+    (function () {
+      const audio = document.getElementById("music");
+      const btn = document.querySelector(".music-btn");
+      let wanted = true; // false once the guest pauses it with the button
+      audio.volume = 0.6;
+
+      const show = () => {
+        const on = !audio.paused;
+        btn.classList.toggle("playing", on);
+        btn.setAttribute("aria-label", on ? "Pause music" : "Play music");
+      };
+      audio.addEventListener("play", show);
+      audio.addEventListener("pause", show);
+      audio.addEventListener("error", () => { btn.hidden = true; });
+
+      const tryPlay = () => { if (wanted && audio.paused) audio.play().catch(() => {}); };
+
+      tryPlay();
+      const unlock = (e) => {
+        if (e.target.closest && e.target.closest(".music-btn")) return; // the button handles itself
+        tryPlay();
+      };
+      ["pointerdown", "touchend", "click", "keydown"].forEach((t) =>
+        document.addEventListener(t, unlock, { passive: true })
+      );
+
+      btn.addEventListener("click", () => {
+        wanted = audio.paused;
+        wanted ? audio.play().catch(() => {}) : audio.pause();
+      });
+
+      // pause when the tab is hidden (e.g. guest goes back to the invite), resume on return
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) audio.pause();
+        else tryPlay();
+      });
+    })();
+  </script>
 </body>
 </html>
