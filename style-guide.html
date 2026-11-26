@@ -52,7 +52,8 @@
   </main>
 
   <button class="music-btn" type="button" aria-label="Play music"><span aria-hidden="true">♫</span></button>
-  <audio id="music" src="https://cdn.shopify.com/s/files/1/0778/9474/6301/files/audio.mp3?v=1795660547" loop preload="auto"></audio>
+  <!-- Must be a real MP3: iPhones can't play WebM/Opus (the old Shopify "audio.mp3" was actually WebM). -->
+  <audio id="music" src="assets/music/style-guide.mp3?v=2" loop preload="auto" playsinline></audio>
 
   <script>
     /* Music for the style guide. Browsers only allow sound after the guest touches the page,
@@ -75,13 +76,16 @@
       const tryPlay = () => { if (wanted && audio.paused) audio.play().catch(() => {}); };
 
       tryPlay();
+      // Only events phones accept as a "user gesture" for sound (pointerdown/touchstart don't count on iPhone).
+      const unlockEvents = ["touchend", "click", "keydown"];
       const unlock = (e) => {
         if (e.target.closest && e.target.closest(".music-btn")) return; // the button handles itself
         tryPlay();
       };
-      ["pointerdown", "touchend", "click", "keydown"].forEach((t) =>
-        document.addEventListener(t, unlock, { passive: true })
-      );
+      unlockEvents.forEach((t) => document.addEventListener(t, unlock, { passive: true }));
+      audio.addEventListener("playing", () =>
+        unlockEvents.forEach((t) => document.removeEventListener(t, unlock))
+      , { once: true });
 
       btn.addEventListener("click", () => {
         wanted = audio.paused;
