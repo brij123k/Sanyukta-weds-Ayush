@@ -7,6 +7,9 @@ const CONFIG = {
   countdownTo: "2027-01-23T15:00:00+05:30",
   // Wardrobe Planner – the style guide page that opens when the planner is tapped. Leave "" to show a "coming soon" note.
   wardrobePlannerUrl: "style-guide.html",
+  // Shown on top of the invite when the planner is tapped, with its own song (must be a real MP3)
+  styleGuideImage: "assets/planner/style-guide.jpg?v=1",
+  styleGuideMusic: "assets/music/style-guide.mp3?v=2",
   // Optional song for the Sangeet ticket / vinyl, e.g. "assets/sangeet/song.mp3"
   sangeetSong: "",
   // Background music for the whole invite. Starts when the guest taps the book.
@@ -55,6 +58,22 @@ const music = (() => {
     start() {
       state.wanted = true;
       audio.play().then(() => { btn.hidden = false; }).catch(() => {});
+    },
+    // Switch song on the SAME audio element. Phones only let sound start on a tap; reusing the
+    // element the book tap already unlocked lets the new song play straight away.
+    // Returns where the old song was, so it can be resumed later.
+    switchTo(src, at = 0) {
+      const was = audio.currentTime;
+      const url = new URL(src, location.href).href;
+      if (audio.src !== url) {
+        audio.src = url;
+        if (at) audio.addEventListener("loadedmetadata", () => { audio.currentTime = at; }, { once: true });
+      }
+      if (state.wanted || !btn.hidden) {
+        state.wanted = true;
+        audio.play().then(() => { btn.hidden = false; }).catch(() => {});
+      }
+      return was;
     },
   };
 })();
@@ -335,12 +354,48 @@ function burst(anchor, { x, y, colors = ["#d4a43a", "#f4c9d0", "#e9b949", "#c46a
 })();
 
 /* ---------- Wardrobe planner ---------- */
+// The style guide opens ON TOP of the invite (not as a new page), so the music keeps playing on
+// phones: a new page would need another tap before any sound is allowed.
+const styleGuide = (() => {
+  const box = document.createElement("div");
+  box.className = "guide-overlay";
+  box.hidden = true;
+  box.innerHTML =
+    '<button class="guide-back" type="button">&larr; Back to invite</button>' +
+    '<div class="guide-page"><img alt="Sanyukta &amp; Ayush style guide: what to wear for Haldi &amp; Mehendi, ' +
+    'Sangeet Night, Mameru &amp; Rukhwat, the Wedding and the After Party" /></div>';
+  document.body.appendChild(box);
+  const img = box.querySelector("img");
+  let mainSongAt = 0;
+
+  function open() {
+    if (!box.hidden) return;
+    if (!img.src) img.src = CONFIG.styleGuideImage;
+    box.hidden = false;
+    box.scrollTop = 0;
+    document.body.classList.add("guide-open");
+    if (CONFIG.styleGuideMusic) mainSongAt = music.switchTo(CONFIG.styleGuideMusic);
+    history.pushState({ guide: true }, "", "#style-guide"); // phone "back" closes it
+  }
+  function close(fromHistory) {
+    if (box.hidden) return;
+    box.hidden = true;
+    document.body.classList.remove("guide-open");
+    if (CONFIG.styleGuideMusic) music.switchTo(CONFIG.backgroundMusic, mainSongAt);
+    if (!fromHistory && history.state && history.state.guide) history.back();
+  }
+  box.querySelector(".guide-back").addEventListener("click", () => close(false));
+  window.addEventListener("popstate", () => close(true));
+  return { open };
+})();
+
 document.querySelectorAll(".planner-link").forEach((a) => {
   if (CONFIG.wardrobePlannerUrl) {
-    // Opens the style guide page in a new tab (the invite stays open behind it)
-    a.href = CONFIG.wardrobePlannerUrl;
-    a.target = "_blank";
-    a.rel = "noopener";
+    a.href = CONFIG.wardrobePlannerUrl; // fallback (long-press / open in new tab)
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      styleGuide.open();
+    });
   } else {
     a.addEventListener("click", (e) => {
       e.preventDefault();
